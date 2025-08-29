@@ -4,80 +4,14 @@ from PIL import Image
 import os
 import base64
 from io import BytesIO
+from words import word_categories  # Import words from words.py
 
 # --- Page Config ---
 st.set_page_config(page_title="🎮 Hangman Game", layout="wide")
 
-# --- Custom CSS for styling and responsive keyboard ---
-st.markdown("""
-<style>
-/* Main container spacing */
-.main .block-container { padding: 1rem; }
-
-/* Game info box */
-.game-info {
-    font-size: 1rem;
-    line-height: 1.5;
-    background-color: #f0f2f6;
-    padding: 15px;
-    border-radius: 10px;
-    border: 2px solid #ddd;
-}
-
-/* Word display */
-.word-display span {
-    font-size: 2.5rem;
-    margin: 0 0.2rem;
-}
-
-/* Keyboard container: consistent appearance */
-.keyboard-row { display: flex; justify-content: center; margin-bottom: 0.5rem; }
-
-/* Keyboard buttons: scaling for devices */
-div[data-testid="stButton"] button {
-    font-weight: bold;
-    border-radius: 8px;
-    transition: all 0.2s ease-in-out;
-}
-
-/* Final message */
-.final-message {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 20px;
-}
-
-/* Reset button */
-.reset-btn {
-    background-color: #ff9800 !important;
-    color: white !important;
-    margin-top: 15px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-    .word-display span { font-size: 2rem; }
-    div[data-testid="stButton"] button {
-        font-size: 1rem;
-        height: 2.5rem;
-        padding: 0.3rem 0.2rem;
-    }
-    .game-info { font-size: 0.95rem; padding: 12px; }
-}
-
-@media (max-width: 480px) {
-    .word-display span { font-size: 1.8rem; }
-    div[data-testid="stButton"] button {
-        font-size: 0.9rem;
-        height: 2rem;
-        padding: 0.25rem 0.2rem;
-    }
-    .game-info { font-size: 0.85rem; padding: 10px; }
-    .final-message { font-size: 1.2rem; }
-}
-</style>
-""", unsafe_allow_html=True)
+# --- Load CSS ---
+with open("styles.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # --- Load Hangman Images ---
 image_folder = "images"
@@ -97,17 +31,12 @@ def pil_to_base64(img):
     img.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()
 
-# --- Word Categories ---
-word_categories = {
-    "Animals": ["elephant", "giraffe", "kangaroo", "dolphin", "tiger", "penguin"],
-    "Programming": ["python", "javascript", "hangman", "developer", "function", "variable"],
-    "Fruits": ["banana", "strawberry", "mango", "apple", "pineapple", "grapes"]
-}
-
 # --- Initialize Session State ---
 if "word" not in st.session_state:
     category = random.choice(list(word_categories.keys()))
-    st.session_state.word = random.choice(word_categories[category])
+    selected = random.choice(word_categories[category])
+    st.session_state.word = selected["word"]
+    st.session_state.hint = selected["hint"]
     st.session_state.category = category
     st.session_state.guessed_letters = set()
     st.session_state.wrong_guesses = 0
@@ -128,27 +57,27 @@ def display_word(word, guessed_letters):
 # --- Header ---
 st.markdown("<h1 style='text-align:center; color:#ff5722;'>🎮 Hangman Game</h1>", unsafe_allow_html=True)
 
-# --- Responsive Main Layout ---
+# --- Main Layout ---
 col_left, col_right = st.columns([1, 2], gap="medium")
 
-# --- Left Column: Images + Info ---
 with col_left:
     img_base64 = pil_to_base64(hangman_images[st.session_state.wrong_guesses])
     st.markdown(f'<img src="data:image/png;base64,{img_base64}" style="width:100%; pointer-events:none;">', unsafe_allow_html=True)
-
     st.markdown(f"""
-        <div class='game-info'>
-            <b>Category:</b> {st.session_state.category}<br>
-            <b>Guessed Letters:</b> {', '.join(sorted(st.session_state.guessed_letters)).upper() if st.session_state.guessed_letters else 'None'}<br>
-            <b>Chances Left:</b> <span style='color:#ff5722; font-weight:bold;'>{st.session_state.max_attempts - st.session_state.wrong_guesses}</span>
-        </div>
-        {display_word(st.session_state.word, st.session_state.guessed_letters)}
-    """, unsafe_allow_html=True)
+    <div class='game-info'>
+        <b>Category:</b> {st.session_state.category}<br>
+        <b>Guessed Letters:</b> {', '.join(sorted(st.session_state.guessed_letters)).upper() if st.session_state.guessed_letters else 'None'}<br>
+        <b>Chances Left:</b> <span style='color:#ff5722; font-weight:bold;'>{st.session_state.max_attempts - st.session_state.wrong_guesses}</span>
+    </div>
+    {display_word(st.session_state.word, st.session_state.guessed_letters)}
+    <div style="text-align:center; margin:5px 0; font-style:italic; color:#555;">
+        Hint: {st.session_state.hint}
+    </div>
+""", unsafe_allow_html=True)
 
-# --- Right Column: Input + Keyboard + Reset ---
+
 with col_right:
     if not st.session_state.game_over:
-        # User text input
         user_input = st.text_input("Type a letter:", max_chars=1, key="letter_input", placeholder="Guess a letter").lower()
         if user_input and user_input.isalpha() and user_input not in st.session_state.guessed_letters:
             st.session_state.guessed_letters.add(user_input)
@@ -157,8 +86,6 @@ with col_right:
             st.rerun()
 
         st.markdown("<h4 style='text-align:center;'>Or Click a Letter</h4>", unsafe_allow_html=True)
-
-        # On-screen keyboard
         keyboard_rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
         for row in keyboard_rows:
             cols = st.columns(len(row))
@@ -171,28 +98,25 @@ with col_right:
                             st.session_state.wrong_guesses += 1
                         st.rerun()
 
-        # Reset button
         reset_col1, reset_col2, reset_col3 = st.columns([1, 2, 1])
         with reset_col2:
             if st.button("🔄 Reset Game", key="reset_btn", use_container_width=True):
-                category = st.session_state.category
-                new_word = random.choice(word_categories[category])
-                st.session_state.word = new_word
+                selected = random.choice(word_categories[st.session_state.category])
+                st.session_state.word = selected["word"]
+                st.session_state.hint = selected["hint"]
                 st.session_state.guessed_letters = set()
                 st.session_state.wrong_guesses = 0
                 st.session_state.game_over = False
                 st.session_state.message = ""
                 st.rerun()
     else:
-        # Game over message and buttons
         st.markdown(f"<div class='final-message'>{st.session_state.message}</div>", unsafe_allow_html=True)
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         btn_col1, btn_col2 = st.columns(2)
         with btn_col1:
             if st.button("▶️ Play Again", key="play_again", use_container_width=True):
-                category = st.session_state.category
-                new_word = random.choice(word_categories[category])
-                st.session_state.word = new_word
+                selected = random.choice(word_categories[st.session_state.category])
+                st.session_state.word = selected["word"]
+                st.session_state.hint = selected["hint"]
                 st.session_state.guessed_letters = set()
                 st.session_state.wrong_guesses = 0
                 st.session_state.game_over = False
@@ -203,7 +127,7 @@ with col_right:
                 st.session_state.clear()
                 st.rerun()
 
-# --- Check for Win/Loss ---
+# --- Check Win/Loss ---
 if not st.session_state.game_over:
     if all(letter in st.session_state.guessed_letters for letter in st.session_state.word):
         st.session_state.message = f"🎉 You won! The word was: **{st.session_state.word.upper()}**"
