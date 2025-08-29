@@ -2,6 +2,8 @@ import streamlit as st
 import random
 from PIL import Image
 import os
+import base64
+from io import BytesIO
 
 # --- Page Config ---
 st.set_page_config(page_title="🎮 Hangman Game", layout="wide")
@@ -89,6 +91,12 @@ except FileNotFoundError:
     st.error("Missing hangman images in 'images' folder.")
     st.stop()
 
+# --- Encode PIL image to base64 ---
+def pil_to_base64(img):
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
 # --- Word Categories ---
 word_categories = {
     "Animals": ["elephant", "giraffe", "kangaroo", "dolphin", "tiger", "penguin"],
@@ -125,7 +133,9 @@ col_left, col_right = st.columns([1, 2], gap="medium")
 
 # --- Left Column: Images + Info ---
 with col_left:
-    st.image(hangman_images[st.session_state.wrong_guesses], use_container_width=True)
+    img_base64 = pil_to_base64(hangman_images[st.session_state.wrong_guesses])
+    st.markdown(f'<img src="data:image/png;base64,{img_base64}" style="width:100%; pointer-events:none;">', unsafe_allow_html=True)
+
     st.markdown(f"""
         <div class='game-info'>
             <b>Category:</b> {st.session_state.category}<br>
@@ -145,9 +155,9 @@ with col_right:
             if user_input not in st.session_state.word:
                 st.session_state.wrong_guesses += 1
             st.rerun()
-        
+
         st.markdown("<h4 style='text-align:center;'>Or Click a Letter</h4>", unsafe_allow_html=True)
-        
+
         # On-screen keyboard
         keyboard_rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
         for row in keyboard_rows:
@@ -160,7 +170,7 @@ with col_right:
                         if letter not in st.session_state.word:
                             st.session_state.wrong_guesses += 1
                         st.rerun()
-        
+
         # Reset button
         reset_col1, reset_col2, reset_col3 = st.columns([1, 2, 1])
         with reset_col2:
