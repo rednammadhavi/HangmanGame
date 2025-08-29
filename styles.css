@@ -1,38 +1,55 @@
-*{
+/* Reset margins and paddings */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
-.st-emotion-cache-t1wise{
+/* Main container padding */
+.st-emotion-cache-t1wise {
     padding: 3rem 8rem;
 }
 
-.main .block-container { padding: 1rem; }
+.main .block-container {
+    padding: 1rem;
+    background-color: var(--st-bgcolor, #fff);
+    color: var(--st-text-color, #000); 
+}
 
 /* Game info box */
 .game-info {
     font-size: 1rem;
     line-height: 1.5;
-    background-color: #f0f2f6;
+    background-color: var(--st-light-bg, #f0f2f6);
+    color: var(--st-text-color, #000);
     padding: 15px;
     border-radius: 10px;
-    border: 2px solid #ddd;
+    border: 2px solid var(--st-border-color, #ddd);
 }
 
 /* Word display */
 .word-display span {
     font-size: 2.5rem;
     margin: 0 0.2rem;
+    color: var(--st-text-color, #000);
 }
 
 /* Keyboard container */
-.keyboard-row { display: flex; justify-content: center; margin-bottom: 0.5rem; }
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    gap: 0.2rem;
+}
 
-/* Keyboard buttons*/
+/* Keyboard buttons */
 div[data-testid="stButton"] button {
     font-weight: bold;
     border-radius: 8px;
     transition: all 0.2s ease-in-out;
+    background-color: var(--st-secondary-bg, #e0e0e0);
+    color: var(--st-text-color, #000);
+    border: 1px solid var(--st-border-color, #ccc);
 }
 
 /* Final message */
@@ -41,13 +58,19 @@ div[data-testid="stButton"] button {
     font-weight: bold;
     text-align: center;
     margin-top: 20px;
+    color: var(--st-accent, #ff5722);
 }
 
 /* Reset button */
 .reset-btn {
-    background-color: #ff9800 !important;
+    background-color: var(--st-accent, #ff9800) !important;
     color: white !important;
     margin-top: 15px;
+}
+
+/* Hint text styling */
+div[style*="font-style:italic"] {
+    color: var(--st-text-color, #555);
 }
 
 /* Responsive adjustments */
